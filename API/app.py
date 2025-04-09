@@ -93,7 +93,7 @@ def getMovieDataWithFilter(main:str, post:str, filters: dict) -> tuple[list, int
 
         if status != 200:
             return [], status
-        print(data)
+
         movies.extend(data.get("results", []))
         page += 1
 
