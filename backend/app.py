@@ -12,12 +12,12 @@ API_KEY = "236e9d003709eb55cf700526b1c268f0" if os.getenv("API_KEY") is None els
 
 # Flask app
 app = Flask(__name__)
-CORS(app)  # Enable CORS for all routes
+CORS(app, resources={r"/api/*": {"origins": "*"}})
 api = Api(app, prefix='/api')
 
 # Swagger
 app.config['SWAGGER'] = {
-    'title': 'My API',
+    'title': 'My backend',
     'uiversion': 3,
     'openapi': '3.0.2',
 }
@@ -34,7 +34,7 @@ liked_movies = set()
 
 def get_api_key():
     """
-    Get API key from environment variables
+    Get backend key from environment variables
     """
     if 'API_KEY' not in os.environ:
         raise ValueError("API_KEY not found in environment variables")
@@ -139,7 +139,7 @@ def generateBarPlot(movie_ids: list) -> tuple:
 
 
 
-#################### API Resources ####################
+#################### backend Resources ####################
 
 class Movie(Resource):
     """
