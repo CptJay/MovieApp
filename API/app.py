@@ -149,13 +149,15 @@ class Movie(Resource):
         'responses': {
             200: {
                 'description': 'Movie details',
-                'examples': {
+                'content': {
                     'application/json': {
-                        "movie": {
-                            "id": 1,
-                            "title": "Inception",
-                            "overview": "A thief who steals corporate secrets through the use of dream-sharing technology.",
-                            "release_date": "2010-07-16"
+                        'example': {
+                            "movie": {
+                                "id": 1,
+                                "title": "Inception",
+                                "overview": "A thief who steals corporate secrets through the use of dream-sharing technology.",
+                                "release_date": "2010-07-16"
+                            }
                         }
                     }
                 }
@@ -194,10 +196,12 @@ class Movie(Resource):
     @swag_from({
         'responses': {
             204: {
-                'description': 'Movie liked successfully',
-                'examples': {
+                'description': 'Movie deleted successfully',
+                'content': {
                     'application/json': {
-                        "message": "Movie liked successfully"
+                        'example': {
+                            "message": "Movie deleted successfully"
+                        }
                     }
                 }
             },
@@ -212,7 +216,7 @@ class Movie(Resource):
         'parameters': [
             {
                 'name': 'movie_id',
-                'description': 'ID of the movie to like',
+                'description': 'ID of the movie to delete',
                 'in': 'path',
                 'type': 'integer',
                 'required': True
@@ -238,10 +242,12 @@ class Movie(Resource):
     @swag_from({
         'responses': {
             201: {
-                'description': 'Movie liked/unliked successfully',
-                'examples': {
+                'description': 'Movie (un)liked successfully',
+                'content': {
                     'application/json': {
-                        "message": "Movie liked successfully"
+                        'example': {
+                            "message": "Movie (un)liked successfully"
+                        }
                     }
                 }
             },
@@ -289,16 +295,19 @@ class PopularMovies(Resource):
         'responses': {
             200: {
                 'description': 'List of popular movies',
-                'examples': {
+                'content': {
                     'application/json': {
-                        "movies": [
-                            {
-                                "id": 1,
-                                "title": "Inception",
-                                "overview": "A thief who steals corporate secrets through the use of dream-sharing technology.",
-                                "release_date": "2010-07-16"
-                            }
-                        ]
+                        'example': {
+                            "movies": [
+                                {
+                                    "id": 1,
+                                    "title": "Inception",
+                                    "overview": "A thief who steals corporate secrets through the use of dream-sharing technology.",
+                                    "release_date": "2010-07-16"
+                                },
+                                "..."
+                            ]
+                        }
                     }
                 }
             },
@@ -352,16 +361,19 @@ class SameGenreMovies(Resource):
         'responses': {
             200: {
                 'description': 'List of movies with the same genre',
-                'examples': {
+                'content': {
                     'application/json': {
-                        "movies": [
-                            {
-                                "id": 1,
-                                "title": "Inception",
-                                "overview": "A thief who steals corporate secrets through the use of dream-sharing technology.",
-                                "release_date": "2010-07-16"
-                            }
-                        ]
+                        'example': {
+                            "movies": [
+                                {
+                                    "id": 1,
+                                    "title": "Inception",
+                                    "overview": "A thief who steals corporate secrets through the use of dream-sharing technology.",
+                                    "release_date": "2010-07-16"
+                                },
+                                "..."
+                            ]
+                        }
                     }
                 }
             },
@@ -433,16 +445,19 @@ class SameRuntimeMovies(Resource):
         'responses': {
             200: {
                 'description': 'List of movies with the same runtime',
-                'examples': {
+                'content': {
                     'application/json': {
-                        "movies": [
-                            {
-                                "id": 1,
-                                "title": "Inception",
-                                "overview": "A thief who steals corporate secrets through the use of dream-sharing technology.",
-                                "release_date": "2010-07-16"
-                            }
-                        ]
+                        'example': {
+                            "movies": [
+                                {
+                                    "id": 1,
+                                    "title": "Inception",
+                                    "overview": "A thief who steals corporate secrets through the use of dream-sharing technology.",
+                                    "release_date": "2010-07-16"
+                                },
+                                "..."
+                            ]
+                        }
                     }
                 }
             },
