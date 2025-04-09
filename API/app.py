@@ -1,18 +1,21 @@
 from flask import Flask, request
 from flask_restful import Api, Resource
+from flask_cors import CORS
 from flasgger import Swagger, swag_from
+import requests, json
 from dotenv import load_dotenv
 import os
 
-# Load environment variables from .env file
+#################### Configurations ####################
 load_dotenv()
-API_KEY = os.getenv('API_KEY')
+API_KEY = "236e9d003709eb55cf700526b1c268f0" if os.getenv("API_KEY") is None else os.getenv("API_KEY")
 
-### Initialize Flask app
+# Flask app
 app = Flask(__name__)
-api = Api(app)
+CORS(app)  # Enable CORS for all routes
+api = Api(app, prefix='/api')
 
-### Swagger configuration
+# Swagger
 app.config['SWAGGER'] = {
     'title': 'My API',
     'uiversion': 3,
@@ -20,27 +23,188 @@ app.config['SWAGGER'] = {
 }
 swagger = Swagger(app)
 
-class Test(Resource):
+MAIN_URL_TMDB: str = "https://api.themoviedb.org/3"
+MAIN_URL_QCK: str = "https://quickcharts.io/chart"
+
+#################### Helpers ####################
+
+# some containers
+deleted_movies = set()
+liked_movies = set()
+
+def get_api_key():
+    """
+    Get API key from environment variables
+    """
+    if 'API_KEY' not in os.environ:
+        raise ValueError("API_KEY not found in environment variables")
+    return os.environ['API_KEY']
+
+
+def getDataFromURL(main: str, post: str):
+    """
+    Fetch data from the given URL
+    """
+    url = f"{main}{post}"
+    try:
+        response = requests.get(url)
+        response.raise_for_status()  # Raise an error for bad responses
+        return response.json(), response.status_code
+    except requests.exceptions.RequestException as e:
+        print(f"Error fetching data from {url}: {e}")
+        return None, 500
+
+
+#################### API Resources ####################
+
+class Movie(Resource):
+    """
+    Get movie details by ID
+    """
     @swag_from({
         'responses': {
             200: {
-                'description': 'A successful response',
+                'description': 'Movie details',
                 'examples': {
-                    'application/json': {'message': 'Hello, World!zzz'}
+                    'application/json': {
+                        "movie": {
+                            "id": 1,
+                            "title": "Inception",
+                            "overview": "A thief who steals corporate secrets through the use of dream-sharing technology.",
+                            "release_date": "2010-07-16"
+                        }
+                    }
                 }
+            },
+            400: {
+                'description': 'Bad Request'
+            },
+            500: {
+                'description': 'Internal Server Error'
             }
-        }
+        },
+        'tags': ['Movie'],
+        'parameters': [
+            {
+                'name': 'movie_id',
+                'description': 'ID of the movie to fetch',
+                'in': 'path',
+                'type': 'integer',
+                'required': True
+            }
+        ],
     })
-    def get(self):
+    def get(self, movie_id):
+        if not isinstance(movie_id, int):
+            return {"error": "Invalid movie ID"}, 400
+
+        if movie_id <= 0:
+            return {"error": "Movie ID must be a positive integer"}, 400
+
+        data, status = getDataFromURL(MAIN_URL_TMDB, f"/movie/{movie_id}?api_key={API_KEY}")
+        if status == 200:
+            return {"movie": data}
+        else:
+            return {"error": "Failed to fetch movie details"}
+
+    @swag_from({
+        'responses': {
+            200: {
+                'description': 'Movie liked successfully',
+                'examples': {
+                    'application/json': {
+                        "message": "Movie liked successfully"
+                    }
+                }
+            },
+            400: {
+                'description': 'Bad Request'
+            },
+            500: {
+                'description': 'Internal Server Error'
+            }
+        },
+        'tags': ['Movie'],
+        'parameters': [
+            {
+                'name': 'movie_id',
+                'description': 'ID of the movie to like',
+                'in': 'path',
+                'type': 'integer',
+                'required': True
+            }
+        ],
+    })
+    def delete(self, movie_id):
         """
-        Test endpoint
+        Delete a movie by ID
         """
-        return {'message': f'Hello, World! {API_KEY}'}, 200
+        if not isinstance(movie_id, int):
+            return {"error": "Invalid movie ID"}, 400
+
+        if movie_id <= 0:
+            return {"error": "Movie ID must be a positive integer"}, 400
+
+        if movie_id in deleted_movies:
+            return {"error": "Movie already deleted"}, 400
+
+        deleted_movies.add(movie_id)
+        return {"message": f"Movie with ID {movie_id} deleted successfully"}, 200
+
+    @swag_from({
+        'responses': {
+            200: {
+                'description': 'Movie liked/unliked successfully',
+                'examples': {
+                    'application/json': {
+                        "message": "Movie liked successfully"
+                    }
+                }
+            },
+            400: {
+                'description': 'Bad Request'
+            },
+            500: {
+                'description': 'Internal Server Error'
+            }
+        },
+        'tags': ['Movie'],
+        'parameters': [
+            {
+                'name': 'movie_id',
+                'description': 'ID of the movie to like/unlike',
+                'in': 'path',
+                'type': 'integer',
+                'required': True
+            }
+        ],
+    })
+    def put(self, movie_id):
+        """
+        Like/unlike a movie by ID
+        """
+        if not isinstance(movie_id, int):
+            return {"error": "Invalid movie ID"}, 400
+
+        if movie_id <= 0:
+            return {"error": "Movie ID must be a positive integer"}, 400
+
+        if movie_id in liked_movies:
+            liked_movies.remove(movie_id)
+            return {"message": f"Movie with ID {movie_id} unliked successfully"}, 200
+        else:
+            liked_movies.add(movie_id)
+            return {"message": f"Movie with ID {movie_id} liked successfully"}, 200
 
 
-# Link resources to URLs
-api.add_resource(Test, '/')
 
 
+
+#################### Routing ####################
+
+api.add_resource(Movie, '/movies/<int:movie_id>', endpoint='movies')
+
+
+#################### Main ####################
 if __name__ == '__main__':
     app.run(debug=True)
