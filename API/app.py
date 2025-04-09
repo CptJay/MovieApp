@@ -40,10 +40,23 @@ def get_api_key():
         raise ValueError("API_KEY not found in environment variables")
     return os.environ['API_KEY']
 
-
-def getDataFromURL(main: str, post: str):
+def getFilters(filters: list) -> dict:
     """
-    Fetch data from the given URL
+    List of filters that are applicable
+    :param filters: List of filters to apply (e.g., genre, amount, etc.)
+    :return: Dictionary of filters
+    """
+    filter_dict = {}
+    for filter in filters:
+        if filter == "amount":
+            filter_dict['amount'] = filters[filter]
+
+    return filter_dict
+
+
+def getDataFromURL(main: str, post: str = "") -> tuple:
+    """
+    Fetch data from the given URL. If you know it's returning JSON, you can use this function.
     """
     url = f"{main}{post}"
     try:
@@ -53,6 +66,38 @@ def getDataFromURL(main: str, post: str):
     except requests.exceptions.RequestException as e:
         print(f"Error fetching data from {url}: {e}")
         return None, 500
+
+def getMovieDataWithFilter(main:str, post:str, filters: dict) -> tuple[list, int]:
+    """
+    Get movies with the given filters
+    :param main: Main URL
+    :param post: Endpoint URL
+    :param filters: List of filters to apply (e.g., amount, genre, etc.)
+    :return: List of movies
+    """
+
+    amount = filters.get('amount', 5)
+    page = filters.get('page', 1)
+    genre = filters.get('genre', None)
+
+    movies = []
+
+    while len(movies) < amount:
+        # Construct the URL with filters
+        url = f"{main}{post}?api_key={API_KEY}&page={page}"
+
+        if genre:
+            url += f"&with_genres={genre}"
+
+        data, status = getDataFromURL(url)
+
+        if status != 200:
+            return [], status
+        print(data)
+        movies.extend(data.get("results", []))
+        page += 1
+
+    return movies[:amount], 200
 
 
 #################### API Resources ####################
@@ -109,7 +154,7 @@ class Movie(Resource):
 
     @swag_from({
         'responses': {
-            200: {
+            204: {
                 'description': 'Movie liked successfully',
                 'examples': {
                     'application/json': {
@@ -149,11 +194,11 @@ class Movie(Resource):
             return {"error": "Movie already deleted"}, 400
 
         deleted_movies.add(movie_id)
-        return {"message": f"Movie with ID {movie_id} deleted successfully"}, 200
+        return {"message": f"Movie with ID {movie_id} deleted successfully"}, 204
 
     @swag_from({
         'responses': {
-            200: {
+            201: {
                 'description': 'Movie liked/unliked successfully',
                 'examples': {
                     'application/json': {
@@ -191,18 +236,78 @@ class Movie(Resource):
 
         if movie_id in liked_movies:
             liked_movies.remove(movie_id)
-            return {"message": f"Movie with ID {movie_id} unliked successfully"}, 200
+            return {"message": f"Movie with ID {movie_id} unliked successfully"}, 201
         else:
             liked_movies.add(movie_id)
-            return {"message": f"Movie with ID {movie_id} liked successfully"}, 200
+            return {"message": f"Movie with ID {movie_id} liked successfully"}, 201
 
 
+class PopularMovies(Resource):
+    """
+    Get popular movies
+    """
+    @swag_from({
+        'responses': {
+            200: {
+                'description': 'List of popular movies',
+                'examples': {
+                    'application/json': {
+                        "movies": [
+                            {
+                                "id": 1,
+                                "title": "Inception",
+                                "overview": "A thief who steals corporate secrets through the use of dream-sharing technology.",
+                                "release_date": "2010-07-16"
+                            }
+                        ]
+                    }
+                }
+            },
+            400: {
+                'description': 'Bad Request'
+            },
+            500: {
+                'description': 'Internal Server Error'
+            }
+        },
+        'tags': ['Popular'],
+        'parameters': [
+            {
+                'name': 'amount',
+                'description': 'Number of popular movies to fetch',
+                'in': 'query',
+                'type': 'integer',
+                'required': False,
+                'default': 5
+            }
+        ],
+    })
+    def get(self):
+        n_popular_movies: int = request.args.get('amount', default=5, type=int)
 
+        if not isinstance(n_popular_movies, int):
+            return {"error": "Invalid amount"}, 400
 
+        if n_popular_movies <= 0:
+            return {"error": "Amount must be a positive integer"}, 400
 
+        if n_popular_movies > 20:
+            return {"error": "Amount must be less than or equal to 20"}, 400
+
+        filters: dict = {
+            "amount": n_popular_movies,
+        }
+
+        movies, status = getMovieDataWithFilter(MAIN_URL_TMDB, "/movie/popular", filters)
+
+        if status == 200:
+            return {"movies": movies}
+        else:
+            return {"error": "Failed to fetch popular movies"}, status
 #################### Routing ####################
 
-api.add_resource(Movie, '/movies/<int:movie_id>', endpoint='movies')
+api.add_resource(Movie, '/movies/<int:movie_id>')
+api.add_resource(PopularMovies, '/movies/popular')
 
 
 #################### Main ####################
