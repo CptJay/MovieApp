@@ -287,6 +287,52 @@ class Movie(Resource):
             return {"message": f"Movie with ID {movie_id} liked successfully"}, 201
 
 
+class FavouriteMovies(Resource):
+    """
+    Get favourite movies
+    """
+    @swag_from({
+        'responses': {
+            200: {
+                'description': 'List of favourite movies',
+                'content': {
+                    'application/json': {
+                        'example': {
+                            "movies": [
+                                {
+                                    "id": 1,
+                                    "title": "Inception",
+                                    "overview": "A thief who steals corporate secrets through the use of dream-sharing technology.",
+                                    "release_date": "2010-07-16"
+                                },
+                                "..."
+                            ]
+                        }
+                    }
+                }
+            },
+            400: {
+                'description': 'Bad Request'
+            },
+            500: {
+                'description': 'Internal Server Error'
+            }
+        },
+        'tags': ['Favourite'],
+    })
+    def get(self):
+        if not liked_movies:
+            return {"error": "No favourite movies found"}, 400
+
+        movies = []
+        for movie_id in liked_movies:
+            data, status = getDataFromURL(MAIN_URL_TMDB, f"/movie/{movie_id}?api_key={API_KEY}")
+            if status == 200:
+                movies.append(data)
+
+        return {"movies": movies}
+
+
 class PopularMovies(Resource):
     """
     Get popular movies
@@ -592,6 +638,7 @@ class BarPlot(Resource):
 #################### Routing ####################
 
 api.add_resource(Movie, '/movies/<int:movie_id>')
+api.add_resource(FavouriteMovies, '/movies/favourites')
 api.add_resource(PopularMovies, '/movies/popular')
 api.add_resource(SameGenreMovies, '/movies/<int:movie_id>/same_genre')
 api.add_resource(SameRuntimeMovies, '/movies/<int:movie_id>/same_runtime')
