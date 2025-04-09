@@ -79,6 +79,8 @@ def getMovieDataWithFilter(main:str, post:str, filters: dict) -> tuple[list, int
     amount = filters.get('amount', 5)
     page = filters.get('page', 1)
     genre = filters.get('genre', [])
+    runtime = filters.get('runtime', 0)
+    runtime_diff = filters.get('runtime_diff', 0)
 
     movies = []
 
@@ -88,6 +90,9 @@ def getMovieDataWithFilter(main:str, post:str, filters: dict) -> tuple[list, int
 
         if genre:
             url += f"&with_genres={",".join(str(g) for g in genre)}"
+
+        if runtime > 0:
+            url += f"&with_runtime.gte={runtime - runtime_diff}&with_runtime.lte={runtime + runtime_diff}"
 
         data, status = getDataFromURL(url)
 
@@ -362,6 +367,9 @@ class SameGenreMovies(Resource):
         if movie_id <= 0 or n_movies <= 0:
             return {"error": "Movie ID must be a positive integer and amount must be a positive integer"}, 400
 
+        if n_movies > 20:
+            return {"error": "Amount must be less than or equal to 20"}, 400
+
         movie, status = getDataFromURL(MAIN_URL_TMDB, f"/movie/{movie_id}?api_key={API_KEY}")
 
         if status != 200:
@@ -383,7 +391,97 @@ class SameGenreMovies(Resource):
             return {"error": "Failed to fetch movies with the same genre"}, status
 
 
+class SameRuntimeMovies(Resource):
+    """
+    Get movies with the same runtime as a given movie
+    """
+    @swag_from({
+        'responses': {
+            200: {
+                'description': 'List of movies with the same runtime',
+                'examples': {
+                    'application/json': {
+                        "movies": [
+                            {
+                                "id": 1,
+                                "title": "Inception",
+                                "overview": "A thief who steals corporate secrets through the use of dream-sharing technology.",
+                                "release_date": "2010-07-16"
+                            }
+                        ]
+                    }
+                }
+            },
+            400: {
+                'description': 'Bad Request'
+            },
+            500: {
+                'description': 'Internal Server Error'
+            }
+        },
+        'tags': ['Same Runtime'],
+        'parameters': [
+            {
+                'name': 'movie_id',
+                'description': 'ID of the movie to fetch similar movies for',
+                'in': 'path',
+                'type': 'integer',
+                'required': True
+            },
+            {
+                'name': 'amount',
+                'description': 'Number of similar movies to fetch',
+                'in': 'query',
+                'type': 'integer',
+                'required': False,
+                'default': 5
+            },
+            {
+                'name': 'runtime_diff',
+                'description': 'Allowed difference in runtime (in minutes)',
+                'in': 'query',
+                'type': 'integer',
+                'required': False,
+                'default': 5
+            }
+        ],
+    })
+    def get(self, movie_id):
+        n_movies: int = request.args.get('amount', default=5, type=int)
+        runtime_diff = request.args.get('runtime_diff', default=5, type=int)
 
+        if not isinstance(movie_id, int) or not isinstance(n_movies, int) or not isinstance(runtime_diff, int):
+            return {"error": "Invalid movie ID, amount or runtime_diff"}, 400
+
+        if movie_id <= 0 or n_movies <= 0 or runtime_diff <= 0:
+            return {"error": "Movie ID, amount and runtime_diff must be positive integers"}, 400
+
+        if n_movies > 20:
+            return {"error": "Amount must be less than or equal to 20"}, 400
+
+        if runtime_diff > 10:
+            return {"error": "Runtime difference must be less than or equal to 10"}, 400
+
+        movie, status = getDataFromURL(MAIN_URL_TMDB, f"/movie/{movie_id}?api_key={API_KEY}")
+
+        if status != 200:
+            return {"error": "Failed to fetch movie details"}, status
+
+        if "runtime" not in movie:
+            return {"error": "No runtime found for this movie"}, 400
+
+        filters = {
+            "amount": n_movies,
+            "runtime": movie["runtime"],
+            "runtime_diff": 10
+        }
+
+        movies, status = getMovieDataWithFilter(MAIN_URL_TMDB, "/discover/movie", filters)
+
+        if status == 200:
+            return {"movies": movies}
+        else:
+            return {"error": "Failed to fetch movies with the same runtime"}, status
 
 
 #################### Routing ####################
@@ -391,6 +489,7 @@ class SameGenreMovies(Resource):
 api.add_resource(Movie, '/movies/<int:movie_id>')
 api.add_resource(PopularMovies, '/movies/popular')
 api.add_resource(SameGenreMovies, '/movies/<int:movie_id>/same_genre')
+api.add_resource(SameRuntimeMovies, '/movies/<int:movie_id>/same_runtime')
 
 
 #################### Main ####################
