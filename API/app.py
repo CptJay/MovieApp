@@ -24,11 +24,11 @@ app.config['SWAGGER'] = {
 swagger = Swagger(app)
 
 MAIN_URL_TMDB: str = "https://api.themoviedb.org/3"
-MAIN_URL_QCK: str = "https://quickcharts.io/chart"
+MAIN_URL_QCK: str = "https://quickchart.io/chart"
 
 #################### Helpers ####################
 
-# some containers
+# some useful containers
 deleted_movies = set()
 liked_movies = set()
 
@@ -103,6 +103,40 @@ def getMovieDataWithFilter(main:str, post:str, filters: dict) -> tuple[list, int
         page += 1
 
     return movies[:amount], 200
+
+def generateBarPlot(movie_ids: list) -> tuple:
+    """
+    Generate a bar plot for the given movie IDs
+    :param movie_ids: List of movie IDs
+    :return: URL of the generated bar plot
+    """
+    titles = []
+    ratings = []
+
+    for movie_id in movie_ids:
+        data, status = getDataFromURL(MAIN_URL_TMDB, f"/movie/{movie_id}?api_key={API_KEY}")
+
+        if status != 200:
+            return None, status
+
+        titles.append(data["title"])
+        ratings.append(data["vote_average"])
+
+    # generate url for the bar plot
+    chart_data = {
+        "type": "bar",
+        "data": {
+            "labels": titles,
+            "datasets": [{
+                "label": "Vote Average",
+                "data": ratings,
+            }]
+        }
+    }
+
+    return f"{MAIN_URL_QCK}?c={chart_data}", 200
+
+
 
 
 #################### API Resources ####################
@@ -483,6 +517,62 @@ class SameRuntimeMovies(Resource):
         else:
             return {"error": "Failed to fetch movies with the same runtime"}, status
 
+class BarPlot(Resource):
+    """
+    Generate a bar plot for the given movie IDs
+    """
+    @swag_from({
+        'responses': {
+            200: {
+                'description': 'Bar plot URL',
+                'content': {
+                    'application/json': {
+                        'example': {
+                            "plot_url": "https://quickchart.io/chart?c={...}"
+                }
+            }
+        }
+            },
+            400: {
+                'description': 'Bad Request'
+            },
+            500: {
+                'description': 'Internal Server Error'
+            }
+        },
+        'tags': ['Bar Plot'],
+        'parameters': [
+            {
+                'name': 'movie_ids',
+                'description': 'List of movie IDs to generate bar plot for',
+                'in': 'query',
+                'type': 'string',
+                'required': True
+            }
+        ],
+    })
+    def get(self):
+        movie_ids_str = request.args.get('movie_ids')
+
+        if not movie_ids_str:
+            return {"error": "Movie IDs list cannot be empty"}, 400
+
+        try:
+            movie_ids: list = [int(id.strip()) for id in movie_ids_str.split(",")]
+        except ValueError:
+            return {"error": "Invalid movie IDs format. Ensure they are integers."}, 400
+
+        movie_ids = movie_ids[:10]
+
+        if not movie_ids:
+            return {"error": "Movie IDs list cannot be empty"}, 400
+
+        plot_url, status = generateBarPlot(movie_ids)
+
+        if status == 200:
+            return {"plot_url": plot_url}
+        else:
+            return {"error": "Failed to generate bar plot"}, status
 
 #################### Routing ####################
 
@@ -490,6 +580,7 @@ api.add_resource(Movie, '/movies/<int:movie_id>')
 api.add_resource(PopularMovies, '/movies/popular')
 api.add_resource(SameGenreMovies, '/movies/<int:movie_id>/same_genre')
 api.add_resource(SameRuntimeMovies, '/movies/<int:movie_id>/same_runtime')
+api.add_resource(BarPlot, '/movies/bar_plot')
 
 
 #################### Main ####################
