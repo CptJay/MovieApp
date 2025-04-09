@@ -78,7 +78,7 @@ def getMovieDataWithFilter(main:str, post:str, filters: dict) -> tuple[list, int
 
     amount = filters.get('amount', 5)
     page = filters.get('page', 1)
-    genre = filters.get('genre', None)
+    genre = filters.get('genre', [])
 
     movies = []
 
@@ -87,7 +87,7 @@ def getMovieDataWithFilter(main:str, post:str, filters: dict) -> tuple[list, int
         url = f"{main}{post}?api_key={API_KEY}&page={page}"
 
         if genre:
-            url += f"&with_genres={genre}"
+            url += f"&with_genres={",".join(str(g) for g in genre)}"
 
         data, status = getDataFromURL(url)
 
@@ -304,10 +304,93 @@ class PopularMovies(Resource):
             return {"movies": movies}
         else:
             return {"error": "Failed to fetch popular movies"}, status
+
+class SameGenreMovies(Resource):
+    """
+    Get movies with the same genre as a given movie
+    """
+    @swag_from({
+        'responses': {
+            200: {
+                'description': 'List of movies with the same genre',
+                'examples': {
+                    'application/json': {
+                        "movies": [
+                            {
+                                "id": 1,
+                                "title": "Inception",
+                                "overview": "A thief who steals corporate secrets through the use of dream-sharing technology.",
+                                "release_date": "2010-07-16"
+                            }
+                        ]
+                    }
+                }
+            },
+            400: {
+                'description': 'Bad Request'
+            },
+            500: {
+                'description': 'Internal Server Error'
+            }
+        },
+        'tags': ['Same Genre'],
+        'parameters': [
+            {
+                'name': 'movie_id',
+                'description': 'ID of the movie to fetch similar movies for',
+                'in': 'path',
+                'type': 'integer',
+                'required': True
+            },
+            {
+                'name': 'amount',
+                'description': 'Number of similar movies to fetch',
+                'in': 'query',
+                'type': 'integer',
+                'required': False,
+                'default': 5
+            }
+        ],
+    })
+    def get(self, movie_id):
+
+        n_movies: int = request.args.get('amount', default=5, type=int)
+
+        if not isinstance(movie_id, int) or not isinstance(n_movies, int):
+            return {"error": "Invalid movie ID or amount"}, 400
+
+        if movie_id <= 0 or n_movies <= 0:
+            return {"error": "Movie ID must be a positive integer and amount must be a positive integer"}, 400
+
+        movie, status = getDataFromURL(MAIN_URL_TMDB, f"/movie/{movie_id}?api_key={API_KEY}")
+
+        if status != 200:
+            return {"error": "Failed to fetch movie details"}, status
+
+        if "genres" not in movie:
+            return {"error": "No genres found for this movie"}, 400
+
+        filters = {
+            "amount": n_movies,
+            "genre": [genre['id'] for genre in movie["genres"]]
+        }
+
+        movies, status = getMovieDataWithFilter(MAIN_URL_TMDB, "/discover/movie", filters)
+
+        if status == 200:
+            return {"movies": movies}
+        else:
+            return {"error": "Failed to fetch movies with the same genre"}, status
+
+
+
+
+
 #################### Routing ####################
 
 api.add_resource(Movie, '/movies/<int:movie_id>')
 api.add_resource(PopularMovies, '/movies/popular')
+api.add_resource(SameGenreMovies, '/movies/<int:movie_id>/same_genre')
 
 
 #################### Main ####################
