@@ -15,8 +15,10 @@ def popularMovies(amount: int = 5):
 
 # Main function to run all tests
 def run_tests():
-    # 1. List all first 20 popular movies
-    popularMovies()
+    # 1. List all first (1 < n < 20) popular movies
+    popularMovies(5)
+
+
 
 if __name__ == "__main__":
     run_tests()
