@@ -112,15 +112,20 @@ def generateBarPlot(movie_ids: list) -> tuple:
     """
     titles = []
     ratings = []
+    failed_movie_ids = []
 
     for movie_id in movie_ids:
         data, status = getDataFromURL(MAIN_URL_TMDB, f"/movie/{movie_id}?api_key={API_KEY}")
 
         if status != 200:
-            return None, status
+            failed_movie_ids.append(movie_id)
+            continue
 
         titles.append(data["title"])
         ratings.append(data["vote_average"])
+
+    if not titles:
+        return {"error": "No valid movies found"}, 400
 
     # generate url for the bar plot
     chart_data = {
@@ -134,7 +139,15 @@ def generateBarPlot(movie_ids: list) -> tuple:
         }
     }
 
-    return f"{MAIN_URL_QCK}?c={chart_data}", 200
+    plot_url = f"{MAIN_URL_QCK}?c={chart_data}"
+
+    if failed_movie_ids:
+        return {
+            "plot_url": plot_url,
+            "warning": f"Some movie IDs were invalid: {failed_movie_ids}"
+        }, 200
+
+    return {"plot_url": plot_url}, 200
 
 
 
