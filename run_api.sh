@@ -1,12 +1,23 @@
 #!/bin/bash
 
-# Check if the virtual environment exists, and activate it
-if [ -d "backend/.venv" ]; then
-    echo "Activating virtual environment..."
-    source backend/.venv/Scripts/activate  # On Windows, use 'backend\.venv\Scripts\activate'
+# Check if the virtual environment exists, create it if it doesn't
+if [ ! -d "backend/.venv" ]; then
+    echo "Virtual environment not found. Creating one..."
+    python -m venv backend/.venv
+
+    if [ $? -ne 0 ]; then
+        echo "Failed to create virtual environment. Make sure Python is installed."
+        exit 1
+    fi
+fi
+
+# Activate the virtual environment
+echo "Activating virtual environment..."
+# Detect platform and use appropriate activate script
+if [[ "$OSTYPE" == "msys" || "$OSTYPE" == "win32" ]]; then
+    source backend/.venv/Scripts/activate
 else
-    echo "Virtual environment not found. Please make sure you have set up the backend virtual environment."
-    exit 1
+    source backend/.venv/bin/activate
 fi
 
 # Install the required Python dependencies
