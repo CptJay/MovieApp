@@ -6,7 +6,7 @@
 */
 
 import React, {useState} from 'react';
-import {postData, putData, deleteData} from '../api/api';  // Import the functions
+import {fetchData, putData, deleteData} from '../api/api';  // Import the functions
 
 function MoviePage() {
     const [movieId, setMovieId] = useState('');
@@ -15,8 +15,7 @@ function MoviePage() {
 
     const handleGetMovie = async () => {
         try {
-            const response = await fetch(`http://127.0.0.1:5000/api/movies/${movieId}`);
-            const data = await response.json();
+            const data = await fetchData(`http://127.0.0.1:5000/api/movies/${movieId}`);
             setMovieData(data.movie);
             setMessage('');
         } catch (error) {

@@ -29,7 +29,7 @@ const Navbar = () => {
             </Link>
           </li>
           <li>
-            <Link to="/similarity" className="text-white hover:text-gray-300">
+            <Link to="/similar" className="text-white hover:text-gray-300">
               Similarity
             </Link>
           </li>
