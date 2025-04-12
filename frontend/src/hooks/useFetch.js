@@ -1,6 +1,6 @@
 // src/hooks/useFetch.js
 import { useState, useEffect } from 'react';
-import { fetchData } from '../api/api';
+import { postData } from '../api/api';
 
 export const useFetch = (endpoint) => {
   const [data, setData] = useState(null);
@@ -9,7 +9,7 @@ export const useFetch = (endpoint) => {
   useEffect(() => {
     const getData = async () => {
       try {
-        const response = await fetchData(endpoint);
+        const response = await postData(endpoint);
         setData(response);
       } catch (err) {
         setError('Failed to fetch data');
