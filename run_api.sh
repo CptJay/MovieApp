@@ -26,4 +26,4 @@ pip install -r backend/requirements.txt
 
 # Run the Flask API server
 echo "Starting the Flask API..."
-python backend/app.py
+python backend/app.py --key "236e9d003709eb55cf700526b1c268f0"

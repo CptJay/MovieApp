@@ -5,10 +5,11 @@ from flasgger import Swagger, swag_from
 import requests, json
 from dotenv import load_dotenv
 import os
+import argparse
 
 #################### Configurations ####################
 load_dotenv()
-API_KEY = "236e9d003709eb55cf700526b1c268f0" if os.getenv("API_KEY") is None else os.getenv("API_KEY")
+API_KEY = "236e9d003709eb55cf700526b1c268f0"
 
 # Flask app
 app = Flask(__name__)
@@ -31,28 +32,6 @@ MAIN_URL_QCK: str = "https://quickchart.io/chart"
 # some useful containers
 deleted_movies = set()
 liked_movies = set()
-
-def get_api_key():
-    """
-    Get backend key from environment variables
-    """
-    if 'API_KEY' not in os.environ:
-        raise ValueError("API_KEY not found in environment variables")
-    return os.environ['API_KEY']
-
-def getFilters(filters: list) -> dict:
-    """
-    List of filters that are applicable
-    :param filters: List of filters to apply (e.g., genre, amount, etc.)
-    :return: Dictionary of filters
-    """
-    filter_dict = {}
-    for filter in filters:
-        if filter == "amount":
-            filter_dict['amount'] = filters[filter]
-
-    return filter_dict
-
 
 def getDataFromURL(main: str, post: str = "") -> tuple:
     """
@@ -660,4 +639,12 @@ api.add_resource(BarPlot, '/movies/bar_plot')
 
 #################### Main ####################
 if __name__ == '__main__':
+    parser = argparse.ArgumentParser(description="Flask API server with API key")
+    parser.add_argument('--key', required=True, help="API key for external services (e.g., TMDB)")
+    args = parser.parse_args()
+
+    # Save the key to a global or config variable
+    API_KEY = args.key
+
+    print(f"Starting server with API key: {API_KEY}")
     app.run(debug=True)
