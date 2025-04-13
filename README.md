@@ -4,6 +4,13 @@ This project is a simple movie application that allows users to search for movie
 
 The app is built using a custom API that interacts with the TMDB API to fetch movie data. The backend is built with Flask, and the frontend is built with React.
 
+## Installation
+- run_api.sh (run_api.bat for Windows) to start the Flask API. This will also install the dependencies.
+- run_script.sh (run_script.bat for Windows) to execute the consume_api.py script.
+  - consume_api.py will tests the API endpoints.
+- run_frontend.sh (run_frontend.bat for Windows) to start the React frontend.
+
+ 
 ## Features (Backend)
 - [x] Search for movies by ID
 - [x] Like and unlike movies 
