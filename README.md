@@ -13,9 +13,10 @@ The app is built using a custom API that interacts with the TMDB API to fetch mo
 - [x] Get movies with similar runtime
 
 ## Technologies Used
-- [x] React
+- [x] React (node + npm)
+- [x] Tailwind CSS
 - [x] Flask
 - [x] Flask-CORS
 - [x] Flassger (Flask + Swagger): API documentation
 - [x] [TMDB](https://developers.themoviedb.org/3) API: 236e9d003709eb55cf700526b1c268f0
-- [x] [Quickchart](https://quickchart.io/) 
+- [x] [Quickchart](https://quickchart.io/) API: None
