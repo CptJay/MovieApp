@@ -33,6 +33,7 @@ MAIN_URL_QCK: str = "https://quickchart.io/chart"
 deleted_movies = set()
 liked_movies = set()
 
+
 def getDataFromURL(main: str, post: str = "") -> tuple:
     """
     Fetch data from the given URL. If you know it's returning JSON, you can use this function.
@@ -46,7 +47,8 @@ def getDataFromURL(main: str, post: str = "") -> tuple:
         print(f"Error fetching data from {url}: {e}")
         return None, 500
 
-def getMovieDataWithFilter(main:str, post:str, filters: dict) -> tuple[list, int]:
+
+def getMovieDataWithFilter(main: str, post: str, filters: dict) -> tuple[list, int]:
     """
     Get movies with the given filters
     :param main: Main URL
@@ -82,6 +84,7 @@ def getMovieDataWithFilter(main:str, post:str, filters: dict) -> tuple[list, int
         page += 1
 
     return movies[:amount], 200
+
 
 def generateBarPlot(movie_ids: list) -> tuple:
     """
@@ -129,14 +132,9 @@ def generateBarPlot(movie_ids: list) -> tuple:
     return {"plot_url": plot_url}, 200
 
 
-
-
 #################### backend Resources ####################
 
 class Movie(Resource):
-    """
-    Get movie details by ID
-    """
     @swag_from({
         'responses': {
             200: {
@@ -173,6 +171,9 @@ class Movie(Resource):
         ],
     })
     def get(self, movie_id):
+        """
+        Get movie details by ID
+        """
         if not isinstance(movie_id, int):
             return {"error": "Invalid movie ID"}, 400
 
@@ -280,9 +281,6 @@ class Movie(Resource):
 
 
 class FavouriteMovies(Resource):
-    """
-    Get favourite movies
-    """
     @swag_from({
         'responses': {
             200: {
@@ -313,6 +311,9 @@ class FavouriteMovies(Resource):
         'tags': ['Favourite'],
     })
     def get(self):
+        """
+        Get favourite movies
+        """
         if not liked_movies:
             return {"error": "No favourite movies found"}, 400
 
@@ -326,9 +327,6 @@ class FavouriteMovies(Resource):
 
 
 class PopularMovies(Resource):
-    """
-    Get popular movies
-    """
     @swag_from({
         'responses': {
             200: {
@@ -369,6 +367,9 @@ class PopularMovies(Resource):
         ],
     })
     def get(self):
+        """
+        Get popular movies
+        """
         n_popular_movies: int = request.args.get('amount', default=5, type=int)
 
         if not isinstance(n_popular_movies, int):
@@ -391,10 +392,8 @@ class PopularMovies(Resource):
         else:
             return {"error": "Failed to fetch popular movies"}, status
 
+
 class SameGenreMovies(Resource):
-    """
-    Get movies with the same genre as a given movie
-    """
     @swag_from({
         'responses': {
             200: {
@@ -442,7 +441,9 @@ class SameGenreMovies(Resource):
         ],
     })
     def get(self, movie_id):
-
+        """
+        Get movies with the same genre as a given movie
+        """
         n_movies: int = request.args.get('amount', default=5, type=int)
 
         if not isinstance(movie_id, int) or not isinstance(n_movies, int):
@@ -476,9 +477,7 @@ class SameGenreMovies(Resource):
 
 
 class SameRuntimeMovies(Resource):
-    """
-    Get movies with the same runtime as a given movie
-    """
+
     @swag_from({
         'responses': {
             200: {
@@ -534,6 +533,9 @@ class SameRuntimeMovies(Resource):
         ],
     })
     def get(self, movie_id):
+        """
+        Get movies with the same runtime as a given movie
+        """
         n_movies: int = request.args.get('amount', default=5, type=int)
         runtime_diff = request.args.get('runtime_diff', default=5, type=int)
 
@@ -570,10 +572,9 @@ class SameRuntimeMovies(Resource):
         else:
             return {"error": "Failed to fetch movies with the same runtime"}, status
 
+
 class BarPlot(Resource):
-    """
-    Generate a bar plot for the given movie IDs
-    """
+
     @swag_from({
         'responses': {
             200: {
@@ -582,9 +583,9 @@ class BarPlot(Resource):
                     'application/json': {
                         'example': {
                             "plot_url": "https://quickchart.io/chart?c={...}"
+                        }
+                    }
                 }
-            }
-        }
             },
             400: {
                 'description': 'Bad Request'
@@ -605,6 +606,9 @@ class BarPlot(Resource):
         ],
     })
     def get(self):
+        """
+        Generate a bar plot for the given movie IDs
+        """
         movie_ids_str = request.args.get('movie_ids')
 
         if not movie_ids_str:
@@ -627,6 +631,7 @@ class BarPlot(Resource):
         else:
             return {"error": "Failed to generate bar plot"}, status
 
+
 #################### Routing ####################
 
 api.add_resource(Movie, '/movies/<int:movie_id>')
@@ -635,7 +640,6 @@ api.add_resource(PopularMovies, '/movies/popular')
 api.add_resource(SameGenreMovies, '/movies/<int:movie_id>/same_genre')
 api.add_resource(SameRuntimeMovies, '/movies/<int:movie_id>/same_runtime')
 api.add_resource(BarPlot, '/movies/bar_plot')
-
 
 #################### Main ####################
 if __name__ == '__main__':
