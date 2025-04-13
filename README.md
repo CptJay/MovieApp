@@ -1,4 +1,8 @@
-Welcome to my MovieApp. This project is a simple movie application that allows users to search for movies (ID based), view details, and manage their favorite movies. The app is built using React and utilizes the TMDB API for movie data.
+Welcome to my MovieApp. 
+
+This project is a simple movie application that allows users to search for movies (ID based), view details, and manage their favorite movies. 
+
+The app is built using a custom API that interacts with the TMDB API to fetch movie data. The backend is built with Flask, and the frontend is built with React.
 
 ## Features
 - [x] Search for movies by ID
